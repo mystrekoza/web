@@ -18,6 +18,7 @@
 <grant-card inline-template :grant="grant" :cred="credentials" :view="view" :short="shortView"
             :contributions='contributions' :show_contributions="show_contributions" :collection="activeCollection"
             :editing_collection.sync='editingCollection' :collection_grant_ids.sync="collection_grant_ids"
+            @dismiss-favorite-alert="dismissFavoriteAlertCountDown = 10"
             v-on:collection:create='openCreateCollectionModal'
             v-on:collection:remove='removeCollection'>
   <template>
@@ -76,6 +77,7 @@
                 <img height="15" src="{% static "v2/images/chains/binance.svg" %}" v-if="grant.tenants.indexOf('BINANCE') > -1">
                 <img height="15" src="{% static "v2/images/chains/rsk.svg" %}" v-if="grant.tenants.indexOf('RSK') > -1">
                 <img height="15" src="{% static "v2/images/chains/algorand.svg" %}" v-if="grant.tenants.indexOf('ALGORAND') > -1">
+                <img height="15" src="{% static "v2/images/chains/cosmos.svg" %}" v-if="grant.tenants.indexOf('COSMOS') > -1">
               </p>
               <div class="align-items-baseline mt-2 mx-0">
 
@@ -221,6 +223,7 @@
             <img class="float-right" height="20" src="{% static "v2/images/chains/binance.svg" %}" v-if="grant.tenants.indexOf('BINANCE') > -1">
             <img class="float-right" height="20" src="{% static "v2/images/chains/rsk.svg" %}" v-if="grant.tenants.indexOf('RSK') > -1">
             <img class="float-right" height="20" src="{% static "v2/images/chains/algorand.svg" %}" v-if="grant.tenants.indexOf('ALGORAND') > -1">
+            <img class="float-right" height="20" src="{% static "v2/images/chains/cosmos.svg" %}" v-if="grant.tenants.indexOf('COSMOS') > -1">
 
             <p class="mb-0" v-if="grant.clr_round_num && grant.is_clr_eligible">
               <!-- on a round -->

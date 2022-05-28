@@ -19,12 +19,13 @@ along with this program. If not, see
 <head>
   {% include 'shared/head.html' with slim=1 %}
   {% include 'shared/cards_pic.html' %}
-  {% bundle css file grants %}
+  {% bundle css file grants_explorer %}
     <link rel="stylesheet" type="text/x-scss" href={% static "v2/scss/search_bar.scss" %} />
     <link rel="stylesheet" type="text/x-scss" href={% static "v2/scss/kudos/styles.scss" %} />
     <link rel="stylesheet" type="text/x-scss" href={% static "v2/scss/grants/card.scss" %} />
     <link rel="stylesheet" type="text/x-scss" href={% static "v2/scss/grants/collection.scss" %} />
     <link rel="stylesheet" type="text/x-scss" href={% static "v2/scss/activity_stream.scss" %} />
+    <link rel="stylesheet" type="text/x-scss" href={% static "v2/scss/gc-utilities.scss" %} />
   {% endbundle %}
   <style>
 
@@ -224,11 +225,11 @@ along with this program. If not, see
                           My Shortcuts
                         </b-dropdown-header>
                         <b-form-checkbox @input="fetchGrants(1)" id="only_contributions" v-model="params.only_contributions" name="only_contributions">My Contributions</b-form-checkbox>
-                        <b-dropdown-text class="font-smaller-4 pb-2" style="width: 230px;">Grants I’ve contributed to</b-dropdown-text>
+                        <b-dropdown-text class="font-smaller-4 pb-2" style="width: 230px;">Grants I've contributed to</b-dropdown-text>
                         <b-form-checkbox @input="fetchGrants(1)" id="me" v-model="params.me" name="me"> My Grants</b-form-checkbox>
-                        <b-dropdown-text class="font-smaller-4 pb-2" style="width: 230px;">Grants I’ve created</b-dropdown-text>
-                        <b-form-checkbox @input="fetchGrants(1)" id="following" v-model="params.following" name="following"> Following</b-form-checkbox>
-                        <b-dropdown-text class="font-smaller-4 pb-2" style="width: 230px;">Grants I’ve followed</b-dropdown-text>
+                        <b-dropdown-text class="font-smaller-4 pb-2" style="width: 230px;">Grants I've created</b-dropdown-text>
+                        <b-form-checkbox @input="fetchGrants(1)" id="following" v-model="params.following" name="following"> Favorite Grants</b-form-checkbox>
+                        <b-dropdown-text class="font-smaller-4 pb-2" style="width: 230px;">Grants I've starred</b-dropdown-text>
                       </div>
                     </b-dropdown-form>
                   </b-dropdown>
@@ -239,12 +240,12 @@ along with this program. If not, see
                 </div>
 
                 <!-- SEARCH BAR AND CART -->
-                <div class="flex-basis-md-25 flex-nowrap d-flex bg-white mb-2 mb-md-0" :class="{'position-md-absolute w-100': searchVisible}">
-                  <button class="btn" v-show="searchVisible" @click="searchVisible=!searchVisible"><i class="fas fa-chevron-left"></i></button>
+                <div class="flex-basis-md-25 flex-nowrap d-flex bg-white mb-2 mb-md-0 position-relative" :class="{'flex-basis-md-60': searchVisible}">
+                  <button class="btn" v-show="searchVisible" @click="searchVisible=!searchVisible"></button>
                   <i
-                    class="far fa-fw fa-search font-smaller-3 position-absolute text-grey-300"
+                    class="far fa-fw fa-search font-smaller-3 text-grey-300 position-absolute"
                     :class="{'pt-2 pt-md-0': searchVisible}"
-                    :style="(searchVisible ? 'top: 10px;margin-left: 7px;left: 34px;' : 'top: 19px; margin-left: 7px;')"
+                    :style="(searchVisible ? 'top: 10px; margin-left: 5px;left: 30px;' : 'top: 10px; margin-left: 5px;')"
                   ></i>
                   <input
                     class="form-control form-control-sm rounded-pill pl-4"
@@ -252,7 +253,7 @@ along with this program. If not, see
                     type="search"
                     v-model="params.keyword"
                     @focus="searchVisible=true"
-                    @blur="searchVisible=false"
+                    @blur="searchVisible = params.keyword.length ? true : false"
                     @input="params.sort_option = '', delayedChangeQuery()"
                     @keyup.enter="changeQuery({page: 1})"/>
                   <div class="navCart dropdown gc-cart" v-if="!searchVisible && sticky_active">
@@ -366,6 +367,23 @@ along with this program. If not, see
                       <a class="text-decoration-none" :href="grant.details_url">
                         {% include 'grants/components/card.html' %}
                       </a>
+                      <b-alert
+                        :show="dismissFavoriteAlertCountDown"
+                        dismissible
+                        variant="primary"
+                        @dismissed="dismissFavoriteAlertCountDown = 0"
+                        class="border border-primary alert-fixed-top mr-md-4 mr-0"
+                      >
+                        <div class="row">
+                          <div class="col-auto col-md-7">
+                            <i class="fas fa-star mr-2"></i>
+                            <span class="text-black">Added to Favorites</span>
+                          </div>
+                          <div class="col-auto col-md-5 text-nowrap text-right">
+                            <a href="{% url 'grants:grants_explorer' %}?following=true&idle=true">View Favorites</a>
+                          </div>
+                        </div>
+                      </b-alert>
                     </div>
                   </div>
 
@@ -408,7 +426,7 @@ along with this program. If not, see
               <div class="row">
                 <div class="col-12 col-md-8">
                   <h3 class="my-3">Explore grants curated by the community</h3>
-                  <p class="font-smaller-1 text-grey-400">Discover grants handpicked by the people you know, or create your own collection and share your favorite grants to the community.</p>
+                  <p class="font-smaller-1 text-grey-400">Discover grants handpicked by community members, or create your own collection and share your favorite grants to the community.</p>
                   <b-button
                     class="mt-4 mt-lg-0 w-100 w-md-auto"
                     variant="primary"
@@ -820,17 +838,16 @@ along with this program. If not, see
     document.collections = JSON.parse(document.getElementById('collections-object').textContent);
     document.activePage = "{{ active }}";
 
-    {% if clr_round %}
-      document.clr_round_pk = "{{clr_round.pk}}";
-      document.round_num = "{{clr_round.round_num}}";
-      document.sub_round_slug = "{{clr_round.sub_round_slug}}";
-      document.customer_name = "{{clr_round.customer_name}}";
+    {% if round_num and sub_round_slug and customer_name %}
+      document.round_num = "{{round_num}}";
+      document.sub_round_slug = "{{sub_round_slug}}";
+      document.customer_name = "{{customer_name}}";
     {% else %}
-      delete document.round_num;
-      delete document.customer_name;
-      delete document.clr_round_pk;
-      delete document.sub_round_slug;
+      document.round_num = 0;
+      document.customer_name = false;
+      document.sub_round_slug = false;
     {% endif %}
+
     let base_style = {
         bg: '/static/v2/images/bg/{{styles.bg}}',
         size: "{{styles.bg_size}}",

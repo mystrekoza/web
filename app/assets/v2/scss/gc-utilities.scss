@@ -121,6 +121,10 @@
 }
 
 // hover effects
+.disable-hover-underline:hover {
+  text-decoration: none!important
+}
+
 .hover-underline:not(:disabled):not(.disabled):not(.active):hover {
   text-decoration: underline!important
 }
@@ -325,4 +329,18 @@ div.hr {
 
 .tooltip-inner {
   background-color: $gc-grey-500;
+}
+
+.alert-fixed-top {
+  position: fixed;
+  top: 80px;
+  right: 0;
+  z-index: 1030;
+  width: 450px;
+  max-width: 95%;
+}
+
+a.plain-link {
+  color: inherit;
+  text-decoration: none;
 }
